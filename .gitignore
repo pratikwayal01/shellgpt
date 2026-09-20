@@ -1,0 +1,5 @@
+.opencode/*
+__pycache__/
+*.pt
+shell_corpus.txt
+custom_commands.txt
