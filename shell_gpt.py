@@ -178,13 +178,16 @@ mount | column -t
 """.strip()
 
 def build_corpus():
-    """Merge built-in commands with any custom commands the user has added."""
+    """Merge built-in commands with custom commands and any tldr corpus."""
     corpus = BUILTIN_CORPUS
     custom = Path(cfg.custom_file)
     if custom.exists():
         extra = custom.read_text().strip()
         if extra:
             corpus = corpus + "\n" + extra
+    tldr = Path("tldr_corpus.txt")
+    if tldr.exists():
+        corpus = corpus + "\n" + tldr.read_text().strip()
     Path(cfg.data_file).write_text(corpus)
     print(f"Corpus: {len(corpus)} chars, {corpus.count(chr(10))+1} lines")
     return corpus
