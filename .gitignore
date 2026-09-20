@@ -4,3 +4,5 @@ __pycache__/
 shell_corpus.txt
 custom_commands.txt
 tldr_corpus.txt
+shellmate_model.npz
+expect_logits.npy
