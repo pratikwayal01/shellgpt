@@ -49,7 +49,14 @@ class Config:
 
 # Checkpoints carry a Config; allowlist it so torch.load (default
 # weights_only=True since 2.6) still rejects arbitrary globals.
+# Register under BOTH module names: Colab saves it as shell_gpt.Config
+# (imported module), local CLI saves it as __main__.Config (run as script).
+Config.__module__ = "__main__"
 torch.serialization.add_safe_globals([Config])
+Config.__module__ = "shell_gpt"
+torch.serialization.add_safe_globals([Config])
+import sys as _sys
+_sys.modules.setdefault("shell_gpt", _sys.modules["__main__"])
 
 cfg = Config()
 
