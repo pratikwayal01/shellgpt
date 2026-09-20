@@ -307,6 +307,12 @@ def estimate_loss(model, data, c: Config, iters=50):
     model.train()
     return sum(losses) / len(losses)
 
+def _save_ckpt(model, optimizer, scaler, it, cfg):
+    tmp = f"{cfg.model_file}.tmp"
+    torch.save({"model": model.state_dict(), "cfg": cfg, "iter": it,
+                "optimizer": optimizer.state_dict(), "scaler": scaler.state_dict()}, tmp)
+    os.replace(tmp, cfg.model_file)   # atomic: no corrupt checkpoint on crash mid-save
+
 def train(extra_data: Optional[str] = None):
     corpus = build_corpus()
     if extra_data:
@@ -322,12 +328,26 @@ def train(extra_data: Optional[str] = None):
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=0.01)
     scaler    = torch.cuda.amp.GradScaler(enabled=(cfg.device == "cuda"))
 
+    # Resume from a mid-training checkpoint if the last run didn't finish
+    start_it = 0
+    ckpt = Path(cfg.model_file)
+    if ckpt.exists():
+        c = torch.load(ckpt, map_location=cfg.device)
+        # "iter" only present in train() checkpoints — finetune saves lack it
+        if "iter" in c and c["iter"] < cfg.max_iters:
+            start_it = c["iter"] + 1
+            model.load_state_dict(c["model"])
+            optimizer.load_state_dict(c["optimizer"])
+            scaler.load_state_dict(c["scaler"])
+            print(f"Resuming from iter {start_it} (checkpoint at iter {c['iter']})")
+
     t0 = time.time()
-    for it in range(cfg.max_iters):
+    for it in range(start_it, cfg.max_iters):
         if it % cfg.eval_interval == 0:
             vl = estimate_loss(model, val_data, cfg)
             elapsed = time.time() - t0
             print(f"iter {it:4d} | val loss {vl:.4f} | {elapsed:.0f}s elapsed")
+            _save_ckpt(model, optimizer, scaler, it, cfg)
 
         x, y = get_batch(train_data, cfg)
         with torch.cuda.amp.autocast(enabled=(cfg.device == "cuda")):
@@ -339,7 +359,7 @@ def train(extra_data: Optional[str] = None):
         scaler.update()
         optimizer.zero_grad(set_to_none=True)
 
-    torch.save({"model": model.state_dict(), "cfg": cfg}, cfg.model_file)
+    _save_ckpt(model, optimizer, scaler, cfg.max_iters, cfg)
     print(f"\nSaved to {cfg.model_file}")
     return model
 
