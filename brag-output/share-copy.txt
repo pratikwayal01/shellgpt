@@ -1,0 +1,7 @@
+Every LLM wants a trillion parameters. This one is 837,888.
+
+shellGPT — a GPT trained from scratch to autocomplete Linux commands, in ~2 minutes on a free Colab T4. The whole model is a 3.1 MB numpy file: no GPU, no server, no llama. Drop it into shellmate and it finishes your partial commands locally.
+
+shellGPT — the tiniest GPT for the terminal.
+
+→ github.com/pratikwayal01/shellgpt

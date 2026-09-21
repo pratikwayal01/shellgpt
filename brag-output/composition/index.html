@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>shellGPT — brag</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        background: #0d1117;
+        color: #e6edf3;
+        font-family: monospace;
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      .clip {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+      }
+      .bg {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .bg-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(63, 185, 80, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(63, 185, 80, 0.04) 1px, transparent 1px);
+        background-size: 60px 60px;
+      }
+      .bg-glow {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 1300px;
+        height: 900px;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(closest-side, rgba(63, 185, 80, 0.08), transparent 70%);
+      }
+
+      /* terminal chrome */
+      .win {
+        position: relative;
+        width: 1180px;
+        background: #101113;
+        border: 1px solid #2b2f36;
+        border-radius: 18px;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+        overflow: hidden;
+      }
+      .win-head {
+        height: 54px;
+        display: flex;
+        align-items: center;
+        padding: 0 22px;
+        background: #15181d;
+        border-bottom: 1px solid #23272e;
+      }
+      .dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        margin-right: 9px;
+      }
+      .dot-r { background: #ff5f57; }
+      .dot-y { background: #febc2e; }
+      .dot-g { background: #28c840; }
+      .win-title {
+        margin-left: 16px;
+        font-size: 18px;
+        color: #8b949e;
+        letter-spacing: 0.5px;
+      }
+      .win-body {
+        position: relative;
+        padding: 38px 46px 44px;
+      }
+
+      .muted { color: #9aa7b4; }
+      .green { color: #3fb950; }
+      .green-hi { color: #4ade80; }
+      .chunk { display: inline-block; }
+      .cursor {
+        display: inline-block;
+        width: 16px;
+        height: 32px;
+        background: #4ade80;
+        vertical-align: text-bottom;
+      }
+
+      /* prompt line */
+      .pl {
+        font-size: 34px;
+        color: #e6edf3;
+        line-height: 1.6;
+      }
+      .caption {
+        font-size: 40px;
+        color: #c9d1d9;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+      }
+      .caption-dim {
+        font-size: 40px;
+        color: #e6edf3;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+      }
+
+      /* completion rows */
+      .crow {
+        display: flex;
+        align-items: center;
+        height: 60px;
+        font-size: 30px;
+      }
+      .tag {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 108px;
+        height: 42px;
+        border-radius: 9px;
+        font-size: 22px;
+        font-weight: 700;
+        background: rgba(63, 185, 80, 0.13);
+        color: #3fb950;
+        border: 1px solid rgba(63, 185, 80, 0.4);
+        margin-right: 22px;
+        padding: 0 12px;
+        flex-shrink: 0;
+      }
+      .crate {
+        font-size: 28px;
+        color: #e6edf3;
+      }
+      .crate.green { color: #4ade80; }
+      .crate .dim { color: #8b949e; }
+
+      .chips {
+        display: flex;
+        align-items: center;
+        margin-top: 26px;
+      }
+      .chip {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 56px;
+        padding: 0 30px;
+        border-radius: 30px;
+        font-size: 25px;
+        font-weight: 700;
+        background: rgba(63, 185, 80, 0.12);
+        color: #4ade80;
+        border: 1px solid rgba(63, 185, 80, 0.4);
+        margin-right: 20px;
+      }
+
+      /* log lines */
+      .log {
+        font-size: 30px;
+        color: #c9d1d9;
+        line-height: 1.75;
+      }
+
+      /* learn scene */
+      .learnline {
+        font-size: 30px;
+        color: #e6edf3;
+        line-height: 1.8;
+      }
+      .learned {
+        font-size: 44px;
+        color: #4ade80;
+        font-weight: 700;
+      }
+      .keycap {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 74px;
+        padding: 0 34px;
+        border-radius: 14px;
+        background: #161a20;
+        border: 2px solid #3d444d;
+        border-bottom-width: 5px;
+        box-shadow: 0 6px 0 rgba(0, 0, 0, 0.4);
+        font-size: 36px;
+        color: #e6edf3;
+        font-weight: 700;
+      }
+      .keycap-sub {
+        margin-left: 26px;
+        font-size: 28px;
+        color: #c9d1d9;
+      }
+
+      /* outro */
+      .wordmark {
+        font-size: 130px;
+        color: #f0f6fc;
+        font-weight: 700;
+        letter-spacing: 2px;
+      }
+      .wordmark .green { color: #3fb950; }
+      .tagline {
+        margin-top: 30px;
+        font-size: 40px;
+        color: #e6edf3;
+      }
+      .url {
+        margin-top: 44px;
+        font-size: 30px;
+        color: #3fb950;
+        letter-spacing: 1px;
+      }
+      .col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-width="1920"
+      data-height="1080"
+      data-duration="20.2"
+    >
+      <div class="bg">
+        <div class="bg-grid"></div>
+        <div class="bg-glow"></div>
+      </div>
+
+      <!-- SCENE 1 — hook: partial command -->
+      <section class="clip" data-start="0" data-duration="3.2" id="scene1">
+        <div class="col">
+          <div id="s1win" class="win" style="height: 250px">
+            <div class="win-head">
+              <span class="dot dot-r"></span>
+              <span class="dot dot-y"></span>
+              <span class="dot dot-g"></span>
+              <span class="win-title">shellmate — git bran</span>
+            </div>
+            <div class="win-body">
+              <div id="s1prompt" class="pl">
+                <span class="chunk green">$ </span><span id="s1c1" class="chunk">git </span><span id="s1c2" class="chunk">bran</span>
+                <span id="s1cur" class="cursor"></span>
+              </div>
+            </div>
+          </div>
+          <div id="s1cap" class="caption" style="margin-top: 60px">Everyone wants a trillion parameters.</div>
+        </div>
+      </section>
+
+      <!-- SCENE 2 — the tiny answer -->
+      <section class="clip" data-start="3.2" data-duration="4.5" id="scene2">
+        <div id="s2win" class="win" style="height: 545px">
+          <div class="win-head">
+            <span class="dot dot-r"></span>
+            <span class="dot dot-y"></span>
+            <span class="dot dot-g"></span>
+            <span class="win-title">shellmate — git bran</span>
+          </div>
+          <div class="win-body">
+            <div id="s2prev" class="pl"><span class="chunk green">$ </span><span class="chunk">git bran</span></div>
+            <div style="height: 30px"></div>
+            <div id="s2done">
+              <div id="s2r1" class="crow">
+                <div class="tag">[gpt]</div>
+                <span class="crate green">git branch</span>
+              </div>
+              <div id="s2r2" class="crow">
+                <div class="tag" style="visibility: hidden">.</div>
+                <span class="crate"><span class="dim">1.</span>&nbsp;&nbsp;git branch</span>
+              </div>
+              <div id="s2r3" class="crow">
+                <div class="tag" style="visibility: hidden">.</div>
+                <span class="crate"><span class="dim">2.</span>&nbsp;&nbsp;git branch --show-current</span>
+              </div>
+              <div id="s2run" class="crate muted" style="font-size: 26px; margin-top: 18px">run? [y/N]</div>
+            </div>
+            <div id="s2chips" class="chips">
+              <div class="chip">837,888 params</div>
+              <div class="chip">110s training</div>
+              <div class="chip">3.1 MB</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCENE 3 — proof -->
+      <section class="clip" data-start="7.7" data-duration="4.5" id="scene3">
+        <div class="col">
+          <div id="s3win" class="win" style="height: 330px">
+            <div class="win-head">
+              <span class="dot dot-r"></span>
+              <span class="dot dot-y"></span>
+              <span class="dot dot-g"></span>
+              <span class="win-title">shellmate — finetune (numpy)</span>
+            </div>
+            <div class="win-body">
+              <div id="s3l1" class="log"><span class="green-hi">5760 iters</span> | loss 1.40 | free Colab T4</div>
+              <div style="height: 22px"></div>
+              <div id="s3l2" class="log">shellmate_model.npz <span class="muted">· 3.1 MB · no GPU, no server, no llama</span></div>
+            </div>
+          </div>
+          <div id="s3cap" class="caption-dim" style="margin-top: 56px">The whole GPT is a 3.1 MB file.</div>
+        </div>
+      </section>
+
+      <!-- SCENE 4 — learns yours -->
+      <section class="clip" data-start="12.2" data-duration="4" id="scene4">
+        <div class="col">
+          <div id="s4win" class="win" style="height: 352px">
+            <div class="win-head">
+              <span class="dot dot-r"></span>
+              <span class="dot dot-y"></span>
+              <span class="dot dot-g"></span>
+              <span class="win-title">teach it your commands</span>
+            </div>
+            <div class="win-body">
+              <div id="s4l1" class="learnline"><span class="chunk green">$ </span><span class="chunk">shell_gpt.py --mode add_cmd</span></div>
+              <div style="height: 20px"></div>
+              <div id="s4l2" class="learnline"><span class="chunk green">$ </span><span class="chunk">shell_gpt.py --mode finetune</span></div>
+              <div style="height: 30px"></div>
+              <div id="s4learned" class="learned">learned in 500 steps</div>
+            </div>
+          </div>
+          <div id="s4key" style="margin-top: 46px; display: flex; align-items: center">
+            <span class="keycap">Ctrl+G</span>
+            <span class="keycap-sub">in any shell</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCENE 5 — outro -->
+      <section class="clip" data-start="16.2" data-duration="4" id="scene5">
+        <div class="col">
+          <div id="s5logo" class="wordmark">shell<span class="green">GPT</span></div>
+          <div id="s5tag" class="tagline">The tiniest GPT for the terminal.</div>
+          <div id="s5url" class="url">github.com/pratikwayal01/shellgpt</div>
+        </div>
+      </section>
+
+      <!-- AUDIO -->
+      <audio id="music" data-start="0" data-duration="20.2" data-volume="0" src="assets/music/happy-beats-business-moves-vol-9-by-ende-dot-app.mp3"></audio>
+
+      <audio id="kp1" data-start="0.5" data-duration="0.3" data-volume="0.5" src="assets/sfx/keypress-001.wav"></audio>
+      <audio id="kp2" data-start="0.75" data-duration="0.3" data-volume="0.5" src="assets/sfx/keypress-002.wav"></audio>
+      <audio id="kp3" data-start="1.0" data-duration="0.3" data-volume="0.5" src="assets/sfx/keypress-003.wav"></audio>
+      <audio id="kp4" data-start="1.25" data-duration="0.3" data-volume="0.5" src="assets/sfx/keypress-001.wav"></audio>
+      <audio id="slam1" data-start="1.7" data-duration="0.2" data-volume="0.55" src="assets/sfx/impactSoft_medium_001.ogg"></audio>
+
+      <audio id="pop1" data-start="4.23" data-duration="0.2" data-volume="0.8" src="assets/sfx/impactSoft_medium_001.ogg"></audio>
+      <audio id="chip1" data-start="4.75" data-duration="0.05" data-volume="0.4" src="assets/sfx/click_003.ogg"></audio>
+      <audio id="chip2" data-start="5.28" data-duration="0.05" data-volume="0.4" src="assets/sfx/click_003.ogg"></audio>
+      <audio id="chip3" data-start="5.8" data-duration="0.05" data-volume="0.4" src="assets/sfx/click_003.ogg"></audio>
+
+      <audio id="pop2" data-start="8.44" data-duration="0.2" data-volume="0.8" src="assets/sfx/impactSoft_medium_001.ogg"></audio>
+
+      <audio id="kp5" data-start="12.65" data-duration="0.3" data-volume="0.5" src="assets/sfx/keypress-002.wav"></audio>
+      <audio id="clk1" data-start="13.4" data-duration="0.05" data-volume="0.4" src="assets/sfx/click_003.ogg"></audio>
+      <audio id="ok1" data-start="14.2" data-duration="0.6" data-volume="0.7" src="assets/sfx/switch_007.ogg"></audio>
+      <audio id="clk2" data-start="15.0" data-duration="0.05" data-volume="0.4" src="assets/sfx/click_003.ogg"></audio>
+
+      <audio id="bang1" data-start="16.8" data-duration="1.48" data-volume="0.75" src="assets/sfx/impactBell_heavy_000.ogg"></audio>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // music: fade in, out for the final beat
+      tl.to("#music", { volume: 0.35, duration: 0.7, ease: "none" }, 0);
+      tl.to("#music", { volume: 0, duration: 1.0, ease: "none" }, 19.0);
+
+      // scene 1 — hook: partial command
+      tl.from("#s1win", { y: 26, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.05);
+      tl.fromTo("#s1c1", { opacity: 0 }, { opacity: 1, duration: 0.12 }, 0.5);
+      tl.fromTo("#s1c2", { opacity: 0 }, { opacity: 1, duration: 0.12 }, 0.85);
+      tl.fromTo("#s1cur", { opacity: 0 }, { opacity: 1, duration: 0.1 }, 0.5);
+      tl.to("#s1cur", { opacity: 0, duration: 0.14, repeat: 7, yoyo: true }, 1.5);
+      tl.fromTo("#s1cap", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.28, ease: "power3.out" }, 1.7);
+
+      // scene 2 — the tiny answer (completion beat-locked to 4.23)
+      tl.from("#s2win", { y: 24, opacity: 0, duration: 0.4, ease: "power3.out" }, 3.35);
+      tl.fromTo("#s2prev", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 3.55);
+      tl.fromTo("#s2done", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 4.23); // beat-locked
+      tl.fromTo("#s2chips .chip", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "power3.out", stagger: 0.06 }, 4.75);
+      tl.fromTo("#s2run", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 5.7);
+
+      // scene 3 — proof
+      tl.from("#s3win", { y: 24, opacity: 0, duration: 0.4, ease: "power3.out" }, 7.85);
+      tl.fromTo("#s3l1", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.3, ease: "power3.out" }, 8.44); // beat-locked
+      tl.fromTo("#s3l2", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.3, ease: "power3.out" }, 9.25);
+      tl.fromTo("#s3cap", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 9.9);
+
+      // scene 4 — learns yours (add_cmd beat-locked to 12.65)
+      tl.from("#s4win", { y: 24, opacity: 0, duration: 0.4, ease: "power3.out" }, 12.35);
+      tl.fromTo("#s4l1", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 12.65); // beat-locked
+      tl.fromTo("#s4l2", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 13.4);
+      tl.fromTo("#s4learned", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 14.2);
+      tl.fromTo("#s4key", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 15.0);
+
+      // scene 5 — outro
+      tl.fromTo("#s5logo", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" }, 16.8);
+      tl.fromTo("#s5tag", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.35, ease: "power3.out" }, 17.55);
+      tl.fromTo("#s5url", { opacity: 0 }, { opacity: 1, duration: 0.35 }, 18.4);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
